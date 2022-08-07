@@ -31,6 +31,13 @@
 
 /*
  ===============================================================================
+ |                                   Macros                                    |
+ ===============================================================================
+ */
+#define USAGE_STR "Usage: %s notes_root_loc", argv[0]
+
+/*
+ ===============================================================================
  |                              Global Variables                               |
  ===============================================================================
  */
@@ -177,6 +184,14 @@ main(int argc, char **argv)
 
 	splf_info f_info = splf_parse(argc, argv);
 
+	/* Check if -h/--help flag was passed */
+	if (to_print_help) {
+		printf(USAGE_STR);
+		printf("\nAvailable options are:\n");
+		splf_print_help(stdout);
+		exit(EXIT_SUCCESS);
+	}
+
 	/* Printing any gotchas in parsing */
 	splf_print_gotchas(f_info, stderr);
 
@@ -190,15 +205,8 @@ main(int argc, char **argv)
 	if (f_info.non_flag_arguments_c > 1) {
 		fprintf(stderr, "Following non-flag arguments are ignored: ");
 		for (int i = 1; i < f_info.non_flag_arguments_c; i++)
-			fprintf(stderr, "%s ", f_info.non_flag_arguments[i]);
+			fprintf(stderr, USAGE_STR);
 		fprintf(stderr, "\n");
-	}
-
-	/* Check if -h/--help flag was passed */
-	if (to_print_help) {
-		printf("Available options are:\n");
-		splf_print_help(stdout);
-		exit(EXIT_SUCCESS);
 	}
 
 	/* = MAIN PART = */
