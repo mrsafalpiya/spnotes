@@ -11,9 +11,9 @@ DEPS    = dep/tiny-regex-c/re.c
 
 # = COMPILER OPTIONS =
 
-CFLAGS = -std=c99 -pedantic -Wall -Wextra -Wno-deprecated-declarations
-DFLAGS = -g
-LIBS   =
+CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Wno-deprecated-declarations
+DFLAGS ?= -g
+LIBS    =
 
 # = TARGETS =
 
@@ -22,8 +22,8 @@ all: ${OUT_DIR}/${BIN}
 ${OUT_DIR}/${BIN}: ${SRCS} ${OUT_DIR}
 	${CC} ${CFLAGS} ${DFLAGS} ${SRCS} ${DEPS} -o $@ ${LIBS}
 
-release: DFLAGS =
-release: all
+release:
+	DFLAGS= make
 
 ${OUT_DIR}:
 	mkdir $@
