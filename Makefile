@@ -20,7 +20,7 @@ LIBS   =
 all: ${OUT_DIR}/${BIN}
 
 ${OUT_DIR}/${BIN}: ${SRCS} ${OUT_DIR}
-	${CC} ${CFLAGS} ${DFLAGS} $< ${DEPS} -o $@ ${LIBS}
+	${CC} ${CFLAGS} ${DFLAGS} ${SRCS} ${DEPS} -o $@ ${LIBS}
 
 release: DFLAGS =
 release: all

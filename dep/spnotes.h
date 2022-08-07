@@ -118,6 +118,9 @@ Ref: https://youtu.be/sJuA5OPvABM
 #include <limits.h> /* NAME_MAX */
 #endif
 #include <dirent.h>
+#ifdef __OpenBSD__
+#define DT_DIR 4
+#endif
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/stat.h> /* stat() */
