@@ -101,6 +101,14 @@ description: Usage of `static inline` keyword in C
 Ref: https://youtu.be/sJuA5OPvABM
 ```
 
-Note the first line of the file starting with '---' following a title,
-description and ending with '---'. The description is optional but other
+Note the first line of the file starting with `---` following a title,
+description and ending with `---`. The description is optional but other
 components has to be present in the file to be regarded as a note.
+
+## Tested platforms
+
+I have successfully compiled this library under following platforms:
+
+- GNU/Linux - Arch linux
+- OpenBSD
+- Windows with Cygwin
