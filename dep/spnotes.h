@@ -93,8 +93,10 @@ Ref: https://youtu.be/sJuA5OPvABM
  ===============================================================================
  *
  * - Computer with a C99 compliant C compiler.
- * - #define _POSIX_C_SOURCE 200809L (for strdup() and strndup())
- * - #define _DEFAULT_SOURCE (for d_type macro constants)
+ * - Linux requires following #define's:
+ *     - #define _POSIX_C_SOURCE 200809L (for strdup() and strndup())
+ *     - #define _DEFAULT_SOURCE         (for d_type macro constants)
+ *     - #define _XOPEN_SOURCE   500     (for nftw())
  */
 
 /*
@@ -781,8 +783,13 @@ spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
 
 		/* fill title and description */
 		char note_path[PATH_MAX];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic ignored "-Wformat-truncation"
 		snprintf(note_path, PATH_MAX, "%s%s", categ->categ_path,
 		         dirent->d_name);
+#pragma GCC diagnostic pop
 		/* filter out md files not having title */
 		if (spnotes_note_fill_title_desc(&notes[notes_c], note_path) <
 		    1)
@@ -872,8 +879,13 @@ SPNOTES_DEF int
 spnotes_notes_add(spnotes_categ categ, char *new_loc)
 {
 	char note_path[PATH_MAX];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic ignored "-Wformat-truncation"
 	snprintf(note_path, PATH_MAX, "%s%ld.md", categ.categ_path,
 	         (unsigned long)time(NULL));
+#pragma GCC diagnostic pop
 
 	int fd = open(note_path, O_WRONLY | O_CREAT, DEFFILEMODE);
 	if (fd == -1) {

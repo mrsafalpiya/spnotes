@@ -1,3 +1,8 @@
+#ifndef __OpenBSD__
+#define _POSIX_C_SOURCE 200809L /* strdup() and strndup() */
+#define _DEFAULT_SOURCE         /* d_type macro constants */
+#define _XOPEN_SOURCE   500     /* nftw() */
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -100,7 +105,7 @@ print_notes_tree(void)
 		for (size_t j = 0; j < spn_instance.categs[i].notes_c; j++) {
 			printf("%s %s",
 			       j == spn_instance.categs[i].notes_c - 1 ? "└──" :
-                                                                         "├──",
+			                                                 "├──",
 			       spn_instance.categs[i].notes[j].title);
 			if (spn_instance.categs[i].notes[j].has_description)
 				printf("%s%s", delimiter,
@@ -167,7 +172,7 @@ main(int argc, char **argv)
 		exit(EXIT_SUCCESS);
 	}
 	if (to_print_version) {
-		printf("spnotes-"VERSION"\n");
+		printf("spnotes-" VERSION "\n");
 		exit(EXIT_SUCCESS);
 	}
 
@@ -217,6 +222,7 @@ main(int argc, char **argv)
 					splu_die(
 						"ERROR: Category with title '%s' already exists.",
 						option_categ);
+					break;
 				case SPNOTES_ERR_MKDIR:
 					ERR_ERRNO(
 						"Couldn't create a directory for new category");
@@ -305,7 +311,7 @@ main(int argc, char **argv)
 					       found_categ->notes[i].title,
 					       i == found_categ->notes_c - 1 ?
 					               '.' :
-                                                       ' ');
+					               ' ');
 				printf("\nRemoving the category will remove all the above notes too! Do you want to continue? (y/n): ");
 				if (getchar() != 'y')
 					exit(EXIT_SUCCESS);

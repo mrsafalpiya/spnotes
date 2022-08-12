@@ -22,8 +22,7 @@ implementation.
 ### Dependencies
 
 - Computer with a C99 compliant C compiler.
-- `#define _POSIX_C_SOURCE 200809L` (for strdup() and strndup())
-- `#define _DEFAULT_SOURCE` (for d_type macro constants)
+- Few `#define`'s on some systems mentioned in the `spnotes.h` file.
 
 ## As a standalone program
 
