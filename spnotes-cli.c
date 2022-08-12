@@ -107,7 +107,7 @@ print_notes_tree(void)
 static void
 warn_ignored_options(int option_index)
 {
-	if (option_index <= f_info.non_flag_arguments_c) {
+	if (option_index >= f_info.non_flag_arguments_c) {
 		return;
 	}
 	fprintf(stderr, "WARNING: Following options are ignored: ");
@@ -162,6 +162,8 @@ main(int argc, char **argv)
 	}
 
 	/* actual options parsing */
+
+	/* 'add' */
 	if (!strcmp(option, "add") || !strcmp(option, "a")) {
 		if (!option_sub)
 			ERR_MORE_INFO("What do you want to add?");
@@ -199,7 +201,7 @@ main(int argc, char **argv)
 				ERR_MORE_INFO("Missing title of the category.");
 			if (!option_note)
 				ERR_MORE_INFO("Missing title of the note.");
-			warn_ignored_options(4);
+			warn_ignored_options(5);
 
 			/* actual adding of note */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -238,6 +240,82 @@ main(int argc, char **argv)
 		}
 
 		ERR_MORE_INFO("You can only add a category or note.");
+	}
+
+	/* 'remove' */
+	if (!strcmp(option, "remove") || !strcmp(option, "r")) {
+		if (!option_sub)
+			ERR_MORE_INFO("What do you want to remove?");
+
+		if (!strcmp(option_sub, "category") ||
+		    !strcmp(option_sub, "c")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			warn_ignored_options(3);
+
+			/* actual removing of category */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"Category with title '%s' doesn't exist.",
+					option_categ);
+
+			/* confirm deletion if there are notes */
+			if (found_categ->notes_c > 0) {
+				printf("The category contains %ld note(s): ",
+				       found_categ->notes_c);
+				for (size_t i = 0; i < found_categ->notes_c;
+				     i++)
+					printf("\"%s\"%c",
+					       found_categ->notes[i].title,
+					       i == found_categ->notes_c - 1 ?
+					               '.' :
+                                                       ' ');
+				printf("\nRemoving the category will remove all the above notes too! Do you want to continue? (y/n): ");
+				if (getchar() != 'y')
+					exit(EXIT_SUCCESS);
+			}
+
+			if (!spnotes_categs_remove(*found_categ))
+				ERR_ERRNO(
+					"Category directory couldn't be deleted");
+
+			printf("Category '%s' removed.\n", option_categ);
+
+			exit(EXIT_SUCCESS);
+		}
+		if (!strcmp(option_sub, "note") || !strcmp(option_sub, "n")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			if (!option_note)
+				ERR_MORE_INFO("Missing title of the note.");
+			warn_ignored_options(4);
+
+			/* actual removing of note */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"ERROR: Category with title '%s' doesn't exist.",
+					option_categ);
+			spnotes_note *found_note =
+				spnotes_notes_search(*found_categ, option_note);
+			if (!found_note)
+				splu_die(
+					"ERROR: Note with title '%s' in the category '%s' already exists.",
+					option_note, option_categ);
+
+			if (!spnotes_notes_remove(*found_note))
+				ERR_ERRNO("Couldn't delete the note file");
+
+			printf("Note titled '%s' of the category '%s' removed.\n",
+			       option_note, option_categ);
+
+			exit(EXIT_SUCCESS);
+		}
+
+		ERR_MORE_INFO("You can only delete a category or note.");
 	}
 
 	ERR_MORE_INFO("Invalid option provided.");
