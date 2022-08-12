@@ -51,6 +51,14 @@ fill_categs_notes(void);
 static void
 print_notes_tree(void);
 
+/* Print all the categories in a list. */
+static void
+print_categs_list(void);
+
+/* Print all the notes of a category in a list. */
+static void
+print_notes_list(spnotes_categ *categ);
+
 /* Sometimes the user provides more options than anticipated and are ignored.
  * Warn about it. */
 static void
@@ -101,6 +109,24 @@ print_notes_tree(void)
 				               .description);
 			printf("\n");
 		}
+	}
+}
+
+static void
+print_categs_list(void)
+{
+	for (size_t i = 0; i < spn_instance.categs_c; i++)
+		printf("%s\n", spn_instance.categs[i].title);
+}
+
+static void
+print_notes_list(spnotes_categ *categ)
+{
+	for (size_t i = 0; i < categ->notes_c; i++) {
+		printf("%s", categ->notes[i].title);
+		if (categ->notes[i].has_description)
+			printf("%s%s", delimiter, categ->notes[i].description);
+		printf("\n");
 	}
 }
 
@@ -311,6 +337,40 @@ main(int argc, char **argv)
 
 			printf("Note titled '%s' of the category '%s' removed.\n",
 			       option_note, option_categ);
+
+			exit(EXIT_SUCCESS);
+		}
+
+		ERR_MORE_INFO("You can only delete a category or note.");
+	}
+
+	/* list */
+	if (!strcmp(option, "list") || !strcmp(option, "l")) {
+		if (!option_sub)
+			ERR_MORE_INFO("What do you want to list?");
+
+		if (!strcmp(option_sub, "category") ||
+		    !strcmp(option_sub, "c")) {
+			warn_ignored_options(2);
+
+			/* list categories */
+			print_categs_list();
+
+			exit(EXIT_SUCCESS);
+		}
+		if (!strcmp(option_sub, "note") || !strcmp(option_sub, "n")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			warn_ignored_options(3);
+
+			/* list notes */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"ERROR: Category with title '%s' doesn't exist.",
+					option_categ);
+			print_notes_list(found_categ);
 
 			exit(EXIT_SUCCESS);
 		}
