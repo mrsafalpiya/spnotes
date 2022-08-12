@@ -1,3 +1,6 @@
+# = PROGRAM CONFIG =
+VERSION = 0.1
+
 # = INPUT AND OUTPUT FILES =
 
 ## Output directory
@@ -11,7 +14,7 @@ DEPS    =
 
 # = COMPILER OPTIONS =
 
-CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Wno-deprecated-declarations
+CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Wno-deprecated-declarations -DVERSION=\"${VERSION}\"
 DFLAGS ?= -g
 LIBS    =
 

@@ -149,18 +149,26 @@ main(int argc, char **argv)
 {
 	/* flags */
 	int to_print_help     = 0;
+	int to_print_version  = 0;
 	int to_output_verbose = 0;
 
 	splf_toggle(&to_print_help, 'h', "help", "Print help message");
-	splf_toggle(&to_output_verbose, 'v', "verbose", "Verbose output");
+	splf_toggle(&to_print_version, 'v', "version", "Print version");
+	splf_toggle(&to_output_verbose, ' ', "verbose", "Verbose output");
 	splf_str(&notes_root_loc, 'p', "path", "Path to the notes");
 	splf_str(&delimiter, 'd', "delimiter", "Delimiter");
 
 	f_info = splf_parse(argc, argv);
 
+	/* print help or version message */
 	if (to_print_help) {
-		fprintf(stdout, USAGE_STR);
+		printf(USAGE_STR);
 		splf_print_help(stdout);
+		exit(EXIT_SUCCESS);
+	}
+	if (to_print_version) {
+		printf("spnotes-"VERSION"\n");
+		exit(EXIT_SUCCESS);
 	}
 
 	/* Printing any gotchas in parsing */
