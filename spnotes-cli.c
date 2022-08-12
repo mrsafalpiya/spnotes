@@ -378,6 +378,67 @@ main(int argc, char **argv)
 		ERR_MORE_INFO("You can only delete a category or note.");
 	}
 
+	/* path */
+	if (!strcmp(option, "path") || !strcmp(option, "p")) {
+		if (!option_sub)
+			ERR_MORE_INFO("What path do you want to get?");
+
+		if (!strcmp(option_sub, "category") ||
+		    !strcmp(option_sub, "c")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			warn_ignored_options(3);
+
+			/* path of category */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"Category with title '%s' doesn't exist.",
+					option_categ);
+
+			if (to_output_verbose)
+				printf("Path of the category '%s' is '%s'.\n",
+				       option_categ, found_categ->categ_path);
+			else
+				printf("%s\n", found_categ->categ_path);
+
+			exit(EXIT_SUCCESS);
+		}
+		if (!strcmp(option_sub, "note") || !strcmp(option_sub, "n")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			if (!option_note)
+				ERR_MORE_INFO("Missing title of the note.");
+			warn_ignored_options(4);
+
+			/* path of note */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"ERROR: Category with title '%s' doesn't exist.",
+					option_categ);
+			spnotes_note *found_note =
+				spnotes_notes_search(*found_categ, option_note);
+			if (!found_note)
+				splu_die(
+					"ERROR: Note with title '%s' in the category '%s' already exists.",
+					option_note, option_categ);
+
+			if (to_output_verbose)
+				printf("Path of the note titled '%s' of category '%s' is '%s'.\n",
+				       option_note, option_categ,
+				       found_note->note_path);
+			else
+				printf("%s\n", found_note->note_path);
+
+			exit(EXIT_SUCCESS);
+		}
+
+		ERR_MORE_INFO("You can get path of a category or note.");
+	}
+
 	ERR_MORE_INFO("Invalid option provided.");
 
 	return EXIT_SUCCESS;
