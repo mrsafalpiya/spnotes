@@ -6,13 +6,8 @@
 
 ## As a library
 
-This library is responsible only for getting the list of categories and notes
-listing the title and description. Any other note related implementations such
-as creating a category or a note entry is upto the user.
-
-This makes the library rather extensible: one can use shell script to handle
-creation and modification of categories/notes meanwhile a C program handles the
-heavy lifting of listing them.
+This library can do all required implementations on categories/notes -- list,
+create and delete.
 
 ### Usage
 
@@ -111,4 +106,4 @@ I have successfully compiled this library under following platforms:
 
 - GNU/Linux - Arch linux
 - OpenBSD
-- Windows with Cygwin
+- Windows with Cygwin (Not after the commit `7569778`)

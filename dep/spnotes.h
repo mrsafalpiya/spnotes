@@ -70,13 +70,8 @@ Ref: https://youtu.be/sJuA5OPvABM
  |                              spnotes - library                              |
  ===============================================================================
  *
- * This library is responsible only for getting the list of categories and notes
- * listing the title and description. Any other note related implementations
- * such as creating a category or a note entry is upto the user.
- *
- * This makes the library rather extensible: one can use shell script to handle
- * creation and modification of categories/notes meanwhile a C program handles
- * the heavy lifting of listing them.
+ * This library can do all required implementations on categories/notes --
+ * list, create and delete.
  */
 
 /*
@@ -118,12 +113,19 @@ Ref: https://youtu.be/sJuA5OPvABM
 #include <limits.h> /* NAME_MAX */
 #endif
 #include <dirent.h>
-#ifdef __OpenBSD__
+#ifdef __OpenBSD__ /* TODO: Learn more about this */
 #define DT_DIR 4
 #endif
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/stat.h> /* stat() */
+#include <sys/stat.h> /* stat(), DEFFILEMODE */
+#ifndef DEFFILEMODE   /* TODO: Learn more about this */
+#define DEFFILEMODE 0666
+#endif
+#include <fcntl.h>  /* open() */
+#include <unistd.h> /* close() */
+#include <time.h>   /* time() */
+#include <ftw.h>    /* nftw() */
 
 /*
  ===============================================================================
@@ -162,12 +164,12 @@ struct spnotes_categ {
 };
 
 struct spnotes_note {
-	char           note_path[PATH_MAX];
-	char           title[NAME_MAX];
-	char          *description; /* dynamically allocated */
-	int            has_description;
+	char            note_path[PATH_MAX];
+	char            title[NAME_MAX];
+	char           *description; /* dynamically allocated */
+	int             has_description;
 	struct timespec last_modified;
-	spnotes_categ *categ;
+	spnotes_categ  *categ;
 };
 
 /*
@@ -187,6 +189,11 @@ static int spnotes_err;
 #define SPNOTES_ERR_INVALID_LOC 5
 #define SPNOTES_ERR_FILE_READ   6
 #define SPNOTES_ERR_FILE_STAT   7
+#define SPNOTES_ERR_REDECLARE   8
+#define SPNOTES_ERR_NOT_FILLED  9
+#define SPNOTES_ERR_MKDIR       10 /* errno is set */
+#define SPNOTES_ERR_OPEN        11 /* errno is set */
+#define SPNOTES_ERR_DELETE      12 /* errno is set */
 
 /*
  ===============================================================================
@@ -200,11 +207,12 @@ static int spnotes_err;
  * Initialize the given 'spnotes_t' struct pointer instance with the given root
  * location.
  *
- * Returns 1 on success.
- * Returns 0 on failure i.e. if the `root_location` is NULL.
+ * Returns 0 on error and sets the `spnotes_err` with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_NULL_PTR' - NULL is passed on `root_location`.
  */
 SPNOTES_DEF int
-spnotes_init(spnotes_t *instance, char *root_location);
+spnotes_init(spnotes_t *instance, const char *root_location);
 
 /*
  * Destructor for the 'spnotes_t' instance.
@@ -220,7 +228,8 @@ spnotes_free(spnotes_t *instance);
  * Fills up the 'categs' and 'categs_c' in the given `instance` with all the
  * categories found.
  *
- * Returns the number of categories found OR -1 on error.
+ * See the comments on `spnotes_categs_fill_filter()` to know about the return
+ * values.
  */
 SPNOTES_DEF int
 spnotes_categs_fill(spnotes_t *instance);
@@ -233,7 +242,14 @@ spnotes_categs_fill(spnotes_t *instance);
  * Passing NULL to `filter` or `filter_func` is equivalent to calling
  * 'spnotes_categs_fill()'.
  *
- * Returns the number of categories found OR -1 on error.
+ * Returns the number of categories found OR -1 on error and sets the
+ * `spnotes_err` with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_INVALID_LOC' - Invalid location to the root notes.
+ * 'SPNOTES_ERR_MALLOC' - Couldn't allocate required memory.
+ * 'SPNOTES_ERR_REALLOC' - Couldn't reallocate required memory.
+ * 'SPNOTES_ERR_FILE_STAT' - Couldn't get the required info of file.
+ * 'SPNOTES_ERR_DIR_READ' - Couldn't read the files on directory.
  */
 SPNOTES_DEF int
 spnotes_categs_fill_filter(spnotes_t *instance, char *filter,
@@ -257,14 +273,47 @@ spnotes_categs_compare_last_modified(const void *categ1, const void *categ2);
 SPNOTES_DEF void
 spnotes_categs_sort_last_modified(spnotes_t *instance);
 
+/*
+ * Search for a given category in the note system.
+ *
+ * On success, returns pointer to the category instance else returns NULL if
+ * the categories array isn't filled yet.
+ */
+SPNOTES_DEF spnotes_categ *
+spnotes_categs_search(spnotes_t instance, const char *title);
+
+/*
+ * Creates a new category in the note system.
+ *
+ * Fills up `new_loc` with the path on disk where the category was added. NULL
+ * can be passed to ignore it.
+ *
+ * Returns 0 on error and sets the `spnotes_err` with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_REDECLARE' - A category with the given title already exists.
+ * 'SPNOTES_ERR_MKDIR' - Couldn't create a directory in the required location.
+ */
+SPNOTES_DEF int
+spnotes_categs_add(spnotes_t instance, const char *title, char *new_loc);
+
+/*
+ * Delete the given category in the note system.
+ *
+ * Returns 0 on error and sets the `spnotes_err` with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_DELETE' - The category directory couldn't be deleted.
+ */
+SPNOTES_DEF int
+spnotes_categs_remove(spnotes_categ categ);
+
 /* = Note = */
 
 /*
  * Fills up the 'title', 'description' and 'has_description' in the given
  * `spnotes_note` with the information in yaml-headers of the given md file.
  *
- * Returns -1 on error, 0 if none/file cannot be read, 1 if only title, or 2 if
- * both title and description is found.
+ * Returns -1 on error (setting the 'spnotes_err'), 0 if none/file cannot be
+ * read, 1 if only title, or 2 if both title and description is found.
  */
 SPNOTES_DEF int
 spnotes_note_fill_title_desc(spnotes_note *note, char *md_loc);
@@ -273,7 +322,8 @@ spnotes_note_fill_title_desc(spnotes_note *note, char *md_loc);
  * Fills up the 'notes' and 'notes_c' in the given `spnotes_categ` with all the
  * notes found.
  *
- * Returns the number of notes found OR -1 on error.
+ * See the comments on `spnotes_notes_fill_filter()` to know about the return
+ * values.
  */
 SPNOTES_DEF int
 spnotes_notes_fill(spnotes_categ *categ);
@@ -286,7 +336,14 @@ spnotes_notes_fill(spnotes_categ *categ);
  * Passing NULL to `filter` or `filter_func` is equivalent to calling
  * 'spnotes_categs_fill()'.
  *
- * Returns the number of notes found OR -1 on error.
+ * Returns the number of notes found OR -1 on error and sets the `spnotes_err`
+ * with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_INVALID_LOC' - Invalid location to the category.
+ * 'SPNOTES_ERR_MALLOC' - Couldn't allocate required memory.
+ * 'SPNOTES_ERR_REALLOC' - Couldn't reallocate required memory.
+ * 'SPNOTES_ERR_FILE_STAT' - Couldn't get the required info of file.
+ * 'SPNOTES_ERR_DIR_READ' - Couldn't read the files on directory.
  */
 SPNOTES_DEF int
 spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
@@ -309,6 +366,45 @@ spnotes_notes_compare_last_modified(const void *note1, const void *note2);
  */
 SPNOTES_DEF void
 spnotes_notes_sort_last_modified(spnotes_categ *categ);
+
+/*
+ * Search for a note of given title in the given category in the note system.
+ *
+ * On success, returns pointer to the note instance else returns NULL if the
+ * notes array isn't filled yet.
+ */
+SPNOTES_DEF spnotes_note *
+spnotes_notes_search(spnotes_categ categ, const char *title);
+
+/*
+ * Creates a new note in the note system.
+ *
+ * The new file created is a empty file. Implementation to add content to the
+ * file are expected to be added. See the layout section of spnotes for more
+ * info on which parts are compulsory to be added.
+ *
+ * Fills up `new_loc` with the path on disk where the note was added. NULL can
+ * be passed to ignore it. But idk why would you want to ever ignore it.
+ * Without the proper layout on the file, the note won't be shown on the
+ * system.
+ *
+ * Returns 0 on error and sets the `spnotes_err` with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_REDECLARE' - A note with the given title already exists.
+ * 'SPNOTES_ERR_OPEN' - Couldn't create a file in the required location.
+ */
+SPNOTES_DEF int
+spnotes_notes_add(spnotes_categ categ, char *new_loc);
+
+/*
+ * Delete the given note in the note system.
+ *
+ * Returns 0 on error and sets the `spnotes_err` with the error.
+ * The error can be:
+ * 'SPNOTES_ERR_DELETE' - The note file couldn't be deleted.
+ */
+SPNOTES_DEF int
+spnotes_notes_remove(spnotes_note note);
 
 /* = Errors = */
 
@@ -335,7 +431,7 @@ spnotes_errorstr(void);
 /* = spnotes_t = */
 
 SPNOTES_DEF int
-spnotes_init(spnotes_t *instance, char *root_location)
+spnotes_init(spnotes_t *instance, const char *root_location)
 {
 	if (root_location == NULL) {
 		spnotes_err = SPNOTES_ERR_NULL_PTR;
@@ -343,7 +439,9 @@ spnotes_init(spnotes_t *instance, char *root_location)
 	}
 
 	instance->root_location = strdup(root_location);
-	instance->categs        = NULL;
+	if (instance->root_location[strlen(instance->root_location) - 1] != '/')
+		strcat(instance->root_location, "/");
+	instance->categs = NULL;
 
 	spnotes_err = SPNOTES_ERR_NONE;
 
@@ -387,7 +485,7 @@ spnotes_categs_fill_filter(spnotes_t *instance, char *filter,
 	int            categs_c = 0, mcategs_c = 128;
 	spnotes_categ *categs = malloc(mcategs_c * sizeof(spnotes_categ));
 	if (categs == NULL) {
-		spnotes_err = SPNOTES_ERR_NULL_PTR;
+		spnotes_err = SPNOTES_ERR_MALLOC;
 		return -1;
 	}
 
@@ -396,7 +494,7 @@ spnotes_categs_fill_filter(spnotes_t *instance, char *filter,
 	struct dirent *dirent;
 	while ((dirent = readdir(dir))) {
 		/* filter out files starting with "." */
-		if (!strncmp(dirent->d_name, ".", 1))
+		if (dirent->d_name[0] == '.')
 			continue;
 		/* filter out non-dir */
 		if (dirent->d_type != DT_DIR)
@@ -426,9 +524,8 @@ spnotes_categs_fill_filter(spnotes_t *instance, char *filter,
 		categs[categs_c].spnotes_instance = instance;
 
 		char categ_path[PATH_MAX];
-		strcpy(categ_path, instance->root_location);
-		strcat(categ_path, "/");
-		strcat(categ_path, dirent->d_name);
+		snprintf(categ_path, PATH_MAX, "%s%s/", instance->root_location,
+		         dirent->d_name);
 
 		strcpy(categs[categs_c].categ_path, categ_path);
 
@@ -466,7 +563,7 @@ SPNOTES_DEF int
 spnotes_categs_compare_last_modified(const void *categ1, const void *categ2)
 {
 	struct timespec *tm1_ts = &(((spnotes_categ *)categ1)->last_modified);
-	struct timespec *tm2_ts= &(((spnotes_categ *)categ2)->last_modified);
+	struct timespec *tm2_ts = &(((spnotes_categ *)categ2)->last_modified);
 
 	if (tm1_ts->tv_sec == tm2_ts->tv_sec) {
 		if (tm1_ts->tv_nsec > tm2_ts->tv_nsec)
@@ -488,6 +585,72 @@ spnotes_categs_sort_last_modified(spnotes_t *instance)
 
 	qsort(instance->categs, instance->categs_c, sizeof(spnotes_categ),
 	      spnotes_categs_compare_last_modified);
+}
+
+SPNOTES_DEF spnotes_categ *
+spnotes_categs_search(spnotes_t instance, const char *title)
+{
+	if (!(instance.categs)) {
+		spnotes_err = SPNOTES_ERR_NOT_FILLED;
+		return NULL;
+	}
+
+	for (size_t i = 0; i < instance.categs_c; i++) {
+		if (!strcmp(instance.categs[i].title, title))
+			return (instance.categs + i);
+	}
+	return NULL;
+}
+
+SPNOTES_DEF int
+spnotes_categs_add(spnotes_t instance, const char *title, char *new_loc)
+{
+	if (spnotes_categs_search(instance, title)) {
+		spnotes_err = SPNOTES_ERR_REDECLARE;
+		return 0;
+	}
+
+	char categ_path[PATH_MAX];
+	snprintf(categ_path, PATH_MAX, "%s%s", instance.root_location, title);
+
+	if (mkdir(categ_path, 0777) != 0) {
+		spnotes_err = SPNOTES_ERR_MKDIR;
+		return 0;
+	}
+
+	if (new_loc)
+		strcpy(new_loc, categ_path);
+
+	return 1;
+}
+
+/* directory unlink function (for 'rmrf()') */
+int
+unlink_cb(const char *fpath, const struct stat *sb, int typeflag,
+          struct FTW *ftwbuf)
+{
+	(void)sb;
+	(void)typeflag;
+	(void)ftwbuf;
+
+	return remove(fpath);
+}
+
+/* recursive directory deletion (for 'spnotes_categs_remove()') */
+int
+rmrf(const char *path)
+{
+	return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+}
+
+SPNOTES_DEF int
+spnotes_categs_remove(spnotes_categ categ)
+{
+	if (rmrf(categ.categ_path) == -1) {
+		spnotes_err = SPNOTES_ERR_DELETE;
+		return 0;
+	}
+	return 1;
 }
 
 /* = Note = */
@@ -582,7 +745,7 @@ spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
 	int           notes_c = 0, mnotes_c = 128;
 	spnotes_note *notes = malloc(mnotes_c * sizeof(spnotes_note));
 	if (notes == NULL) {
-		spnotes_err = SPNOTES_ERR_NULL_PTR;
+		spnotes_err = SPNOTES_ERR_MALLOC;
 		return -1;
 	}
 
@@ -591,7 +754,7 @@ spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
 	struct dirent *dirent;
 	while ((dirent = readdir(dir))) {
 		/* filter out files starting with "." */
-		if (!strncmp(dirent->d_name, ".", 1))
+		if (dirent->d_name[0] == '.')
 			continue;
 		/* filter out dir */
 		if (dirent->d_type == DT_DIR)
@@ -619,9 +782,8 @@ spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
 
 		/* fill title and description */
 		char note_path[PATH_MAX];
-		strcpy(note_path, categ->categ_path);
-		strcat(note_path, "/");
-		strcat(note_path, dirent->d_name);
+		snprintf(note_path, PATH_MAX, "%s%s", categ->categ_path,
+		         dirent->d_name);
 		/* filter out md files not having title */
 		if (spnotes_note_fill_title_desc(&notes[notes_c], note_path) <
 		    1)
@@ -668,7 +830,7 @@ SPNOTES_DEF int
 spnotes_notes_compare_last_modified(const void *note1, const void *note2)
 {
 	struct timespec *tm1_ts = &(((spnotes_note *)note1)->last_modified);
-	struct timespec *tm2_ts= &(((spnotes_note *)note2)->last_modified);
+	struct timespec *tm2_ts = &(((spnotes_note *)note2)->last_modified);
 
 	if (tm1_ts->tv_sec == tm2_ts->tv_sec) {
 		if (tm1_ts->tv_nsec > tm2_ts->tv_nsec)
@@ -692,6 +854,54 @@ spnotes_notes_sort_last_modified(spnotes_categ *categ)
 	      spnotes_notes_compare_last_modified);
 }
 
+SPNOTES_DEF spnotes_note *
+spnotes_notes_search(spnotes_categ categ, const char *title)
+{
+	if (!(categ.notes)) {
+		spnotes_err = SPNOTES_ERR_NOT_FILLED;
+		return NULL;
+	}
+
+	for (size_t i = 0; i < categ.notes_c; i++) {
+		if (!strcmp(categ.notes[i].title, title))
+			return (categ.notes + i);
+	}
+	return NULL;
+}
+
+SPNOTES_DEF int
+spnotes_notes_add(spnotes_categ categ, char *new_loc)
+{
+	char note_path[PATH_MAX];
+	snprintf(note_path, PATH_MAX, "%s%ld.md", categ.categ_path,
+	         (unsigned long)time(NULL));
+
+	int fd = open(note_path, O_WRONLY | O_CREAT, DEFFILEMODE);
+	if (fd == -1) {
+		spnotes_err = SPNOTES_ERR_OPEN;
+		return 0;
+	}
+	if (close(fd) == -1) {
+		spnotes_err = SPNOTES_ERR_OPEN;
+		return 0;
+	}
+
+	if (new_loc)
+		strcpy(new_loc, note_path);
+
+	return 1;
+}
+
+SPNOTES_DEF int
+spnotes_notes_remove(spnotes_note note)
+{
+	if (remove(note.note_path) == -1) {
+		spnotes_err = SPNOTES_ERR_DELETE;
+		return 0;
+	}
+	return 1;
+}
+
 /* = Errors = */
 
 SPNOTES_DEF char *
@@ -713,6 +923,16 @@ spnotes_errorstr(void)
 		return "Cannot read the file";
 	case SPNOTES_ERR_FILE_STAT:
 		return "Cannot read the file stat";
+	case SPNOTES_ERR_REDECLARE:
+		return "Given name was already declared";
+	case SPNOTES_ERR_NOT_FILLED:
+		return "Required field wasn't filled";
+	case SPNOTES_ERR_MKDIR:
+		return "Cannot create the directory";
+	case SPNOTES_ERR_OPEN:
+		return "Cannot open the file";
+	case SPNOTES_ERR_DELETE:
+		return "Cannot delete the file";
 	}
 
 	return "No error";

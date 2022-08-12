@@ -210,7 +210,7 @@ typedef struct {
 	int   non_defined_flags_short_c;
 	int   non_flag_arguments_c;
 	char *non_value_flag_long;
-	char  non_value_flag_short; /* ' ' = empty */
+	char  non_value_flag_short; /* '\0' = empty */
 } splf_info;
 
 /* = Global variables = */
@@ -326,23 +326,14 @@ splf_str(char **f_str, const char short_hand, const char *long_hand,
 SPLF_DEF splf_info
 splf_parse(int argc, char **argv)
 {
-	int           i, j, is_double_dash, is_long_arg;
-	char         *cur_arg, *equal_ch;
-	splf_info     f_info;
-	splf_arg_type a_type;
+	int is_double_dash = 0;
+	char *cur_arg;
 
-	is_double_dash = 0;
-	cur_arg        = NULL;
+	splf_info f_info = { 0 };
 
-	f_info.non_defined_flags_long_c  = 0;
-	f_info.non_defined_flags_short_c = 0;
-	f_info.non_flag_arguments_c      = 0;
-	f_info.non_value_flag_long       = NULL;
-	f_info.non_value_flag_short      = ' ';
-
-	for (i = 1; i < argc; i++) {
-		is_long_arg = 0;
-		equal_ch    = NULL;
+	for (int i = 1; i < argc; i++) {
+		int is_long_arg = 0;
+		char *equal_ch;
 
 		/* Check if double dash was present or the current argv is NOT a
 		 * flag type argument */
@@ -373,9 +364,9 @@ splf_parse(int argc, char **argv)
 		if (is_long_arg)
 			equal_ch = strchr(cur_arg, '=');
 
-		a_type = NONE;
+		splf_arg_type a_type = NONE;
 		/* Iterate through defined flags and search for valid flag */
-		for (j = 0; j < splf_c; j++) {
+		for (int j = 0; j < splf_c; j++) {
 			/* Get the argument type */
 			if (is_long_arg) {
 				if (equal_ch &&
@@ -543,9 +534,7 @@ splf_parse(int argc, char **argv)
 SPLF_DEF void
 splf_print_help(FILE *stream)
 {
-	int i;
-
-	for (i = 0; i < splf_c; i++) {
+	for (int i = 0; i < splf_c; i++) {
 		fprintf(stream, "    ");
 
 		/* flag value */
@@ -596,7 +585,7 @@ splf_print_gotchas(splf_info f_info, FILE *stream)
 		        f_info.non_value_flag_long);
 		ret_value = 1;
 	}
-	if (f_info.non_value_flag_short != ' ') {
+	if (f_info.non_value_flag_short != '\0') {
 		fprintf(stream, "No value given on the short flag '%c'\n",
 		        f_info.non_value_flag_short);
 		ret_value = 1;
