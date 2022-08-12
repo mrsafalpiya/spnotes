@@ -390,7 +390,6 @@ spnotes_notes_search(spnotes_categ categ, const char *title);
  *
  * Returns 0 on error and sets the `spnotes_err` with the error.
  * The error can be:
- * 'SPNOTES_ERR_REDECLARE' - A note with the given title already exists.
  * 'SPNOTES_ERR_OPEN' - Couldn't create a file in the required location.
  */
 SPNOTES_DEF int

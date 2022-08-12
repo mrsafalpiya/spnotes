@@ -7,7 +7,7 @@ BIN     = spnotes-cli
 
 ## Source File(s)
 SRCS    = ${BIN}.c
-DEPS    = dep/tiny-regex-c/re.c
+DEPS    =
 
 # = COMPILER OPTIONS =
 

@@ -8,6 +8,9 @@ obj
 *.obj
 *.elf
 
+# Core files
+*.core
+
 # Diff files
 *.rej
 
