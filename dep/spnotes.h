@@ -12,6 +12,14 @@
 
 /*
  ===============================================================================
+ |                               Version History                               |
+ ===============================================================================
+ *
+ - v0.1 (Current)
+ */
+
+/*
+ ===============================================================================
  |                              spnotes - layout                               |
  ===============================================================================
  *
@@ -158,7 +166,7 @@ struct spnotes_t {
 
 struct spnotes_categ {
 	spnotes_t      *spnotes_instance;
-	char            categ_path[PATH_MAX];
+	char            path[PATH_MAX];
 	char            title[NAME_MAX];
 	struct timespec last_modified;
 	spnotes_note   *notes; /* NULL = Not filled yet */
@@ -166,7 +174,7 @@ struct spnotes_categ {
 };
 
 struct spnotes_note {
-	char            note_path[PATH_MAX];
+	char            path[PATH_MAX];
 	char            title[NAME_MAX];
 	char           *description; /* dynamically allocated */
 	int             has_description;
@@ -524,15 +532,15 @@ spnotes_categs_fill_filter(spnotes_t *instance, char *filter,
 		categs[categs_c].notes            = NULL;
 		categs[categs_c].spnotes_instance = instance;
 
-		char categ_path[PATH_MAX];
-		snprintf(categ_path, PATH_MAX, "%s%s/", instance->root_location,
+		char path[PATH_MAX];
+		snprintf(path, PATH_MAX, "%s%s/", instance->root_location,
 		         dirent->d_name);
 
-		strcpy(categs[categs_c].categ_path, categ_path);
+		strcpy(categs[categs_c].path, path);
 
 		/* get the last modified date */
 		struct stat categ_stat;
-		if (stat(categ_path, &categ_stat) != 0) {
+		if (stat(path, &categ_stat) != 0) {
 			instance->categs   = categs;
 			instance->categs_c = categs_c;
 
@@ -611,16 +619,16 @@ spnotes_categs_add(spnotes_t instance, const char *title, char *new_loc)
 		return 0;
 	}
 
-	char categ_path[PATH_MAX];
-	snprintf(categ_path, PATH_MAX, "%s%s", instance.root_location, title);
+	char path[PATH_MAX];
+	snprintf(path, PATH_MAX, "%s%s", instance.root_location, title);
 
-	if (mkdir(categ_path, 0777) != 0) {
+	if (mkdir(path, 0777) != 0) {
 		spnotes_err = SPNOTES_ERR_MKDIR;
 		return 0;
 	}
 
 	if (new_loc)
-		strcpy(new_loc, categ_path);
+		strcpy(new_loc, path);
 
 	return 1;
 }
@@ -647,7 +655,7 @@ rmrf(const char *path)
 SPNOTES_DEF int
 spnotes_categs_remove(spnotes_categ categ)
 {
-	if (rmrf(categ.categ_path) == -1) {
+	if (rmrf(categ.path) == -1) {
 		spnotes_err = SPNOTES_ERR_DELETE;
 		return 0;
 	}
@@ -737,7 +745,7 @@ SPNOTES_DEF int
 spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
                           int (*filter_func)(const char *, const char *))
 {
-	DIR *dir = opendir(categ->categ_path);
+	DIR *dir = opendir(categ->path);
 	if (dir == NULL) {
 		spnotes_err = SPNOTES_ERR_INVALID_LOC;
 		return -1;
@@ -782,16 +790,16 @@ spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
 		}
 
 		/* fill title and description */
-		char note_path[PATH_MAX];
+		char path[PATH_MAX];
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic ignored "-Wformat-truncation"
-		snprintf(note_path, PATH_MAX, "%s%s", categ->categ_path,
+		snprintf(path, PATH_MAX, "%s%s", categ->path,
 		         dirent->d_name);
 #pragma GCC diagnostic pop
 		/* filter out md files not having title */
-		if (spnotes_note_fill_title_desc(&notes[notes_c], note_path) <
+		if (spnotes_note_fill_title_desc(&notes[notes_c], path) <
 		    1)
 			continue;
 
@@ -802,12 +810,12 @@ spnotes_notes_fill_filter(spnotes_categ *categ, char *filter,
 			continue;
 		}
 
-		strcpy(notes[notes_c].note_path, note_path);
+		strcpy(notes[notes_c].path, path);
 		notes[notes_c].categ = categ;
 
 		/* get the last modified date */
 		struct stat note_stat;
-		if (stat(note_path, &note_stat) != 0) {
+		if (stat(path, &note_stat) != 0) {
 			categ->notes   = notes;
 			categ->notes_c = notes_c;
 
@@ -878,16 +886,16 @@ spnotes_notes_search(spnotes_categ categ, const char *title)
 SPNOTES_DEF int
 spnotes_notes_add(spnotes_categ categ, char *new_loc)
 {
-	char note_path[PATH_MAX];
+	char path[PATH_MAX];
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic ignored "-Wformat-truncation"
-	snprintf(note_path, PATH_MAX, "%s%ld.md", categ.categ_path,
+	snprintf(path, PATH_MAX, "%s%ld.md", categ.path,
 	         (unsigned long)time(NULL));
 #pragma GCC diagnostic pop
 
-	int fd = open(note_path, O_WRONLY | O_CREAT, DEFFILEMODE);
+	int fd = open(path, O_WRONLY | O_CREAT, DEFFILEMODE);
 	if (fd == -1) {
 		spnotes_err = SPNOTES_ERR_OPEN;
 		return 0;
@@ -898,7 +906,7 @@ spnotes_notes_add(spnotes_categ categ, char *new_loc)
 	}
 
 	if (new_loc)
-		strcpy(new_loc, note_path);
+		strcpy(new_loc, path);
 
 	return 1;
 }
@@ -906,7 +914,7 @@ spnotes_notes_add(spnotes_categ categ, char *new_loc)
 SPNOTES_DEF int
 spnotes_notes_remove(spnotes_note note)
 {
-	if (remove(note.note_path) == -1) {
+	if (remove(note.path) == -1) {
 		spnotes_err = SPNOTES_ERR_DELETE;
 		return 0;
 	}

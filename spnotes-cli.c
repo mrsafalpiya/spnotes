@@ -24,8 +24,8 @@
  ===============================================================================
  */
 
-#define USAGE_STR                                                                                                              \
-	"Usage: %s [(a)dd/(r)emove/(l)ist/(p)ath] [(c)ategory/(n)ote] [categ_title] [note_title]\n\nAvailable options are:\n", \
+#define USAGE_STR                                                                                                                     \
+	"Usage: %s [(a)dd/(r)emove/(l)ist/(p)ath/(i)nfo] [(c)ategory/(n)ote] [categ_title] [note_title]\n\nAvailable options are:\n", \
 		argv[0]
 
 #define ERR_MORE_INFO(msg) splu_die("ERROR: " msg " Use --help for more info.");
@@ -413,9 +413,9 @@ main(int argc, char **argv)
 
 			if (to_output_verbose)
 				printf("Path of the category '%s' is '%s'.\n",
-				       option_categ, found_categ->categ_path);
+				       option_categ, found_categ->path);
 			else
-				printf("%s\n", found_categ->categ_path);
+				printf("%s\n", found_categ->path);
 
 			exit(EXIT_SUCCESS);
 		}
@@ -437,15 +437,87 @@ main(int argc, char **argv)
 				spnotes_notes_search(*found_categ, option_note);
 			if (!found_note)
 				splu_die(
-					"ERROR: Note with title '%s' in the category '%s' already exists.",
+					"ERROR: Note with title '%s' in the category '%s' doesn't exist.",
 					option_note, option_categ);
 
 			if (to_output_verbose)
 				printf("Path of the note titled '%s' of category '%s' is '%s'.\n",
 				       option_note, option_categ,
-				       found_note->note_path);
+				       found_note->path);
 			else
-				printf("%s\n", found_note->note_path);
+				printf("%s\n", found_note->path);
+
+			exit(EXIT_SUCCESS);
+		}
+
+		ERR_MORE_INFO("You can get path of a category or note.");
+	}
+
+	/* info */
+	if (!strcmp(option, "info") || !strcmp(option, "i")) {
+		if (!option_sub)
+			ERR_MORE_INFO("What info do you want to get?");
+
+		if (!strcmp(option_sub, "category") ||
+		    !strcmp(option_sub, "c")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			warn_ignored_options(3);
+
+			/* path of category */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"Category with title '%s' doesn't exist.",
+					option_categ);
+
+			char       time_formatted[80];
+			struct tm *ts;
+			ts = localtime(&found_categ->last_modified.tv_sec);
+			strftime(time_formatted, sizeof(time_formatted),
+			         "%a %Y-%m-%d %H:%M:%S %Z", ts);
+			printf("Title: %s\nPath: %s\nLast modified: %s\nNumber of notes: %ld\nNotes: ",
+			       found_categ->title, found_categ->path,
+			       time_formatted, found_categ->notes_c);
+			for (size_t i = 0; i < found_categ->notes_c; i++) {
+				printf("'%s'", found_categ->notes[i].title);
+				if (i != found_categ->notes_c)
+					printf(", ");
+			}
+			printf("\n");
+
+			exit(EXIT_SUCCESS);
+		}
+		if (!strcmp(option_sub, "note") || !strcmp(option_sub, "n")) {
+			if (!option_categ)
+				ERR_MORE_INFO("Missing title of the category.");
+			if (!option_note)
+				ERR_MORE_INFO("Missing title of the note.");
+			warn_ignored_options(4);
+
+			/* path of note */
+			spnotes_categ *found_categ = spnotes_categs_search(
+				spn_instance, option_categ);
+			if (!found_categ)
+				splu_die(
+					"ERROR: Category with title '%s' doesn't exist.",
+					option_categ);
+			spnotes_note *found_note =
+				spnotes_notes_search(*found_categ, option_note);
+			if (!found_note)
+				splu_die(
+					"ERROR: Note with title '%s' in the category '%s' does exist.",
+					option_note, option_categ);
+
+			char       time_formatted[80];
+			struct tm *ts;
+			ts = localtime(&found_note->last_modified.tv_sec);
+			strftime(time_formatted, sizeof(time_formatted),
+			         "%a %Y-%m-%d %H:%M:%S %Z", ts);
+			printf("Title: %s\nPath: %s\nLast modified: %s\nCategory: %s\n",
+			       found_note->title, found_note->path,
+			       time_formatted, found_note->categ->title);
 
 			exit(EXIT_SUCCESS);
 		}
