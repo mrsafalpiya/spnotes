@@ -34,7 +34,7 @@ ${OUT_DIR}:
 clean:
 	rm -rf ${OUT_DIR}
 
-install: all
+install: ${OUT_DIR}/${BIN}
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f ${OUT_DIR}/${BIN} ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/${BIN}
