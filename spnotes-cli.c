@@ -64,11 +64,6 @@ print_categs_list(void);
 static void
 print_notes_list(spnotes_categ *categ);
 
-/* Sometimes the user provides more options than anticipated and are ignored.
- * Warn about it. */
-static void
-warn_ignored_options(int option_index);
-
 /*
  ===============================================================================
  |                          Function Implementations                           |
@@ -135,20 +130,6 @@ print_notes_list(spnotes_categ *categ)
 	}
 }
 
-static void
-warn_ignored_options(int option_index)
-{
-	if (option_index >= f_info.non_flag_arguments_c) {
-		return;
-	}
-	fprintf(stderr, "WARNING: Following options are ignored: ");
-
-	for (int i = option_index; i < f_info.non_flag_arguments_c; i++)
-		fprintf(stderr, "\"%s\"%c", f_info.non_flag_arguments[i],
-		        i == f_info.non_flag_arguments_c - 1 ? '.' : ' ');
-	fprintf(stderr, "\n");
-}
-
 int
 main(int argc, char **argv)
 {
@@ -211,7 +192,7 @@ main(int argc, char **argv)
 		    !strcmp(option_sub, "c")) {
 			if (!option_categ)
 				ERR_MORE_INFO("Missing title of the category.");
-			warn_ignored_options(3);
+			splf_warn_ignored_args(f_info, stderr, 3);
 
 			/* actual adding of category */
 			char new_loc[PATH_MAX];
@@ -241,7 +222,7 @@ main(int argc, char **argv)
 				ERR_MORE_INFO("Missing title of the category.");
 			if (!option_note)
 				ERR_MORE_INFO("Missing title of the note.");
-			warn_ignored_options(5);
+			splf_warn_ignored_args(f_info, stderr, 5);
 
 			/* actual adding of note */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -291,7 +272,7 @@ main(int argc, char **argv)
 		    !strcmp(option_sub, "c")) {
 			if (!option_categ)
 				ERR_MORE_INFO("Missing title of the category.");
-			warn_ignored_options(3);
+			splf_warn_ignored_args(f_info, stderr, 3);
 
 			/* actual removing of category */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -330,7 +311,7 @@ main(int argc, char **argv)
 				ERR_MORE_INFO("Missing title of the category.");
 			if (!option_note)
 				ERR_MORE_INFO("Missing title of the note.");
-			warn_ignored_options(4);
+			splf_warn_ignored_args(f_info, stderr, 4);
 
 			/* actual removing of note */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -365,7 +346,7 @@ main(int argc, char **argv)
 
 		if (!strcmp(option_sub, "category") ||
 		    !strcmp(option_sub, "c")) {
-			warn_ignored_options(2);
+			splf_warn_ignored_args(f_info, stderr, 2);
 
 			/* list categories */
 			print_categs_list();
@@ -375,7 +356,7 @@ main(int argc, char **argv)
 		if (!strcmp(option_sub, "note") || !strcmp(option_sub, "n")) {
 			if (!option_categ)
 				ERR_MORE_INFO("Missing title of the category.");
-			warn_ignored_options(3);
+			splf_warn_ignored_args(f_info, stderr, 3);
 
 			/* list notes */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -401,7 +382,7 @@ main(int argc, char **argv)
 		    !strcmp(option_sub, "c")) {
 			if (!option_categ)
 				ERR_MORE_INFO("Missing title of the category.");
-			warn_ignored_options(3);
+			splf_warn_ignored_args(f_info, stderr, 3);
 
 			/* path of category */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -424,7 +405,7 @@ main(int argc, char **argv)
 				ERR_MORE_INFO("Missing title of the category.");
 			if (!option_note)
 				ERR_MORE_INFO("Missing title of the note.");
-			warn_ignored_options(4);
+			splf_warn_ignored_args(f_info, stderr, 4);
 
 			/* path of note */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -462,7 +443,7 @@ main(int argc, char **argv)
 		    !strcmp(option_sub, "c")) {
 			if (!option_categ)
 				ERR_MORE_INFO("Missing title of the category.");
-			warn_ignored_options(3);
+			splf_warn_ignored_args(f_info, stderr, 3);
 
 			/* path of category */
 			spnotes_categ *found_categ = spnotes_categs_search(
@@ -494,7 +475,7 @@ main(int argc, char **argv)
 				ERR_MORE_INFO("Missing title of the category.");
 			if (!option_note)
 				ERR_MORE_INFO("Missing title of the note.");
-			warn_ignored_options(4);
+			splf_warn_ignored_args(f_info, stderr, 4);
 
 			/* path of note */
 			spnotes_categ *found_categ = spnotes_categs_search(
