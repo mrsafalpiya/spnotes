@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+categ=$(spnotes-cli l c | fzf)
+note=$(spnotes-cli l n "$categ" | fzf | awk -F' --- ' '{print $1}')
+loc=$(spnotes-cli p n "$categ" "$note")
+
+$EDITOR "$loc"

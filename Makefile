@@ -38,6 +38,7 @@ install: ${OUT_DIR}/${BIN}
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f ${OUT_DIR}/${BIN} ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/${BIN}
+	cp -f wrapper-scripts/* ${DESTDIR}${PREFIX}/bin
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/${BIN}

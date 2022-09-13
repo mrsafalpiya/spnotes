@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+categ=$(spnotes-cli l c | fzf)
+echo "Enter the new note title:"
+read note
+loc=$(spnotes-cli a n "$categ" "$note")
+
+$EDITOR "$loc"
