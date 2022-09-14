@@ -28,21 +28,8 @@ implementation.
 
 Users are supposed to use this library to create their own implementation of
 `spnotes`. For reference, a fully functional program (that I personally use) is
-provided in this repo as `cli/spnotes-cli.c`.
-
-### Installing the demo program
-
-Go inside the `cli` folder and simply run
-
-```sh
-make release
-```
-to compile the program and
-
-```sh
-make install
-```
-(requires root privilege) to install the program to the system.
+provided in this repo as `cli/spnotes-cli.c`. Also a proof-of-concept gui
+application is on `gui/spnotes-gui.c`.
 
 ## Note taking system layout
 
