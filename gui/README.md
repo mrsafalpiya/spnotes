@@ -3,6 +3,10 @@
 A fully functional proof-of-concept gui program made using
 [spnotes](https://github.com/mrsafalpiya/spnotes).
 
+## Preview
+
+![Screenshot preview](docs/ss.png)
+
 ## Dependencies
 
 - A C99-compliant compiler.
