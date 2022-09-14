@@ -33,6 +33,15 @@
 #define ERR(msg)           splu_die("ERROR: " msg ".");
 
 /*
+ * Why bother free'ing memory if you are going to exit anyway.
+ *
+ * Included only to make valgrind happy.
+ */
+#ifndef RELEASE
+#define exit(CODE) spnotes_free(&spn_instance); exit(CODE)
+#endif
+
+/*
  ===============================================================================
  |                              Global Variables                               |
  ===============================================================================
@@ -158,8 +167,9 @@ main(int argc, char **argv)
 	}
 
 	/* Printing any gotchas in parsing */
-	if (splf_print_gotchas(f_info, stderr))
+	if (splf_print_gotchas(f_info, stderr)) {
 		exit(EXIT_FAILURE);
+	}
 
 	/* spnotes */
 	if (!notes_root_loc)
@@ -294,8 +304,9 @@ main(int argc, char **argv)
 					               '.' :
 					               ' ');
 				printf("\nRemoving the category will remove all the above notes too! Do you want to continue? (y/n): ");
-				if (getchar() != 'y')
+				if (getchar() != 'y') {
 					exit(EXIT_SUCCESS);
+				}
 			}
 
 			if (!spnotes_categs_remove(*found_categ))

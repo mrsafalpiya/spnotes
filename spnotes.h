@@ -15,7 +15,9 @@
  |                               Version History                               |
  ===============================================================================
  *
- - v0.1 (Current)
+ - v0.2 (Current)
+     - Fixed memory errors found from valgrind.
+ - v0.1
  */
 
 /*
@@ -451,6 +453,7 @@ spnotes_init(spnotes_t *instance, const char *root_location)
 	if (instance->root_location[strlen(instance->root_location) - 1] != '/')
 		strcat(instance->root_location, "/");
 	instance->categs = NULL;
+	instance->categs_c = 0;
 
 	spnotes_err = SPNOTES_ERR_NONE;
 
@@ -465,7 +468,8 @@ spnotes_free(spnotes_t *instance)
 
 	for (size_t i = 0; i < instance->categs_c; i++) {
 		for (size_t j = 0; j < instance->categs[i].notes_c; j++)
-			free(instance->categs[i].notes[j].description);
+			if (instance->categs[i].notes[j].has_description)
+				free(instance->categs[i].notes[j].description);
 		free(instance->categs[i].notes);
 	}
 	free(instance->categs);
@@ -530,6 +534,7 @@ spnotes_categs_fill_filter(spnotes_t *instance, char *filter,
 		}
 		strcpy(categs[categs_c].title, dirent->d_name);
 		categs[categs_c].notes            = NULL;
+		categs[categs_c].notes_c          = 0;
 		categs[categs_c].spnotes_instance = instance;
 
 		char path[PATH_MAX];

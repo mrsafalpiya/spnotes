@@ -1,5 +1,5 @@
 # = PROGRAM CONFIG =
-VERSION = 0.1
+VERSION = 0.2
 
 # = INPUT AND OUTPUT FILES =
 
@@ -26,7 +26,7 @@ ${OUT_DIR}/${BIN}: ${SRCS} ${OUT_DIR}
 	${CC} ${CFLAGS} ${DFLAGS} ${SRCS} ${DEPS} -o $@ ${LIBS}
 
 release:
-	DFLAGS= make
+	DFLAGS=-DRELEASE make
 
 ${OUT_DIR}:
 	mkdir $@
