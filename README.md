@@ -11,7 +11,7 @@ create and delete.
 
 ### Usage
 
-Simple copy the `dep/spnotes.h` file into your project and do this:
+Simple copy the `spnotes.h` file into your project and do this:
 
 ```c
 #define SPNOTES_IMPL
@@ -28,11 +28,11 @@ implementation.
 
 Users are supposed to use this library to create their own implementation of
 `spnotes`. For reference, a fully functional program (that I personally use) is
-provided in this repo as `spnotes-cli.c`.
+provided in this repo as `cli/spnotes-cli.c`.
 
 ### Installing the demo program
 
-Simply run
+Go inside the `cli` folder and simply run
 
 ```sh
 make release
@@ -105,4 +105,4 @@ I have successfully compiled this library under following platforms:
 
 - GNU/Linux - Arch linux
 - OpenBSD
-- Windows with Cygwin (Not after the commit `7569778`)
+- Windows with Cygwin (No longer tested)

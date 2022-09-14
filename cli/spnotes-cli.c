@@ -13,7 +13,7 @@
 
 /* spnotes - https://github.com/mrsafalpiya/spnotes */
 #define SPNOTES_IMPL
-#include "dep/spnotes.h"
+#include "../spnotes.h"
 
 /* config file */
 #include "config.h"
