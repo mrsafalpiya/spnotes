@@ -12,6 +12,8 @@ BIN     = spnotes-cli
 SRCS    = ${BIN}.c
 DEPS    =
 
+WRAPPER_SCRIPT = wrapper-scripts
+
 # = COMPILER OPTIONS =
 
 CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Wno-deprecated-declarations -DVERSION=\"${VERSION}\"
@@ -38,7 +40,8 @@ install: ${OUT_DIR}/${BIN}
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f ${OUT_DIR}/${BIN} ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/${BIN}
-	cp -f wrapper-scripts/* ${DESTDIR}${PREFIX}/bin
+	cp -f ${WRAPPER_SCRIPT}/* ${DESTDIR}${PREFIX}/bin
+	for script in $(shell ls ${WRAPPER_SCRIPT}); do chmod 755 ${DESTDIR}${PREFIX}/bin/$${script}; done
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/${BIN}
