@@ -3,6 +3,9 @@
 set -e
 
 categ=$(spnotes-cli l c | fzf)
+echo "Notes written in the category '$categ' are:"
+spnotes-cli -a l n "$categ"
+echo ""
 echo "Enter the new note title:"
 read note
 loc=$(spnotes-cli a n "$categ" "$note")
