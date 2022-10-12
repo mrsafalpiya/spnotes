@@ -277,6 +277,15 @@ SPNOTES_DEF int
 spnotes_categs_compare_last_modified(const void *categ1, const void *categ2);
 
 /*
+ * Compare function to sort the categories found in ascending alphabetical
+ * order.
+ *
+ * To be passed to a 'qsort()' function.
+ */
+SPNOTES_DEF int
+spnotes_categs_compare_alphabetically(const void *categ1, const void *categ2);
+
+/*
  * Sorts the categories found in descending order of last modified.
  *
  * Completely safe to pass a NULL pointer or a spnotes instance whose categories
@@ -284,6 +293,15 @@ spnotes_categs_compare_last_modified(const void *categ1, const void *categ2);
  */
 SPNOTES_DEF void
 spnotes_categs_sort_last_modified(spnotes_t *instance);
+
+/*
+ * Sorts the categories found in ascending alphabetical order.
+ *
+ * Completely safe to pass a NULL pointer or a spnotes instance whose categories
+ * hasn't been filled yet.
+ */
+SPNOTES_DEF void
+spnotes_categs_sort_alphabetically(spnotes_t *instance);
 
 /*
  * Search for a given category in the note system.
@@ -371,6 +389,14 @@ SPNOTES_DEF int
 spnotes_notes_compare_last_modified(const void *note1, const void *note2);
 
 /*
+ * Compare function to sort the notes found in ascending alphabetical order.
+ *
+ * To be passed to a 'qsort()' function.
+ */
+SPNOTES_DEF int
+spnotes_notes_compare_alphabetically(const void *note1, const void *note2);
+
+/*
  * Sorts the notes found in descending order of last modified.
  *
  * Completely safe to pass a NULL pointer or a spnotes category whose notes
@@ -378,6 +404,15 @@ spnotes_notes_compare_last_modified(const void *note1, const void *note2);
  */
 SPNOTES_DEF void
 spnotes_notes_sort_last_modified(spnotes_categ *categ);
+
+/*
+ * Sorts the notes found in ascending alphabetical order.
+ *
+ * Completely safe to pass a NULL pointer or a spnotes category whose notes
+ * hasn't been filled yet.
+ */
+SPNOTES_DEF void
+spnotes_notes_sort_alphabetically(spnotes_categ *categ);
 
 /*
  * Search for a note of given title in the given category in the note system.
@@ -591,6 +626,15 @@ spnotes_categs_compare_last_modified(const void *categ1, const void *categ2)
 	return 1;
 }
 
+SPNOTES_DEF int
+spnotes_categs_compare_alphabetically(const void *categ1, const void *categ2)
+{
+	char *categ1_title = ((spnotes_categ *)categ1)->title;
+	char *categ2_title = ((spnotes_categ *)categ2)->title;
+
+	return strcmp(categ1_title, categ2_title);
+}
+
 SPNOTES_DEF void
 spnotes_categs_sort_last_modified(spnotes_t *instance)
 {
@@ -599,6 +643,16 @@ spnotes_categs_sort_last_modified(spnotes_t *instance)
 
 	qsort(instance->categs, instance->categs_c, sizeof(spnotes_categ),
 	      spnotes_categs_compare_last_modified);
+}
+
+SPNOTES_DEF void
+spnotes_categs_sort_alphabetically(spnotes_t *instance)
+{
+	if (instance == NULL || instance->categs == NULL)
+		return;
+
+	qsort(instance->categs, instance->categs_c, sizeof(spnotes_categ),
+	      spnotes_categs_compare_alphabetically);
 }
 
 SPNOTES_DEF spnotes_categ *
@@ -863,6 +917,15 @@ spnotes_notes_compare_last_modified(const void *note1, const void *note2)
 	return 1;
 }
 
+SPNOTES_DEF int
+spnotes_notes_compare_alphabetically(const void *note1, const void *note2)
+{
+	char *note1_title = ((spnotes_note *)note1)->title;
+	char *note2_title = ((spnotes_note *)note2)->title;
+
+	return strcmp(note1_title, note2_title);
+}
+
 SPNOTES_DEF void
 spnotes_notes_sort_last_modified(spnotes_categ *categ)
 {
@@ -871,6 +934,16 @@ spnotes_notes_sort_last_modified(spnotes_categ *categ)
 
 	qsort(categ->notes, categ->notes_c, sizeof(spnotes_note),
 	      spnotes_notes_compare_last_modified);
+}
+
+SPNOTES_DEF void
+spnotes_notes_sort_alphabetically(spnotes_categ *categ)
+{
+	if (categ == NULL || categ->notes == NULL)
+		return;
+
+	qsort(categ->notes, categ->notes_c, sizeof(spnotes_note),
+	      spnotes_notes_compare_alphabetically);
 }
 
 SPNOTES_DEF spnotes_note *

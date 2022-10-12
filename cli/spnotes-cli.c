@@ -38,7 +38,9 @@
  * Included only to make valgrind happy.
  */
 #ifndef RELEASE
-#define exit(CODE) spnotes_free(&spn_instance); exit(CODE)
+#define exit(CODE)                   \
+	spnotes_free(&spn_instance); \
+	exit(CODE)
 #endif
 
 /*
@@ -50,6 +52,8 @@
 static splf_info f_info;
 static spnotes_t spn_instance;
 static char     *delimiter = " --- ";
+
+int to_sort_alphabet = 0;
 
 /*
  ===============================================================================
@@ -87,8 +91,11 @@ fill_categs_notes(void)
 		splu_die("ERROR: Couldn't get the categories: %s.",
 		         spnotes_errorstr());
 
-	/* sort according to last modified */
-	spnotes_categs_sort_last_modified(&spn_instance);
+	/* sort categories */
+	if (to_sort_alphabet)
+		spnotes_categs_sort_alphabetically(&spn_instance);
+	else
+		spnotes_categs_sort_last_modified(&spn_instance);
 
 	/* read notes */
 	for (size_t i = 0; i < spn_instance.categs_c; i++)
@@ -96,9 +103,14 @@ fill_categs_notes(void)
 			splu_die("ERROR: Couldn't get the notes: %s.",
 			         spnotes_errorstr());
 
-	/* sort all notes according to last modified */
+	/* sort notes */
 	for (size_t i = 0; i < spn_instance.categs_c; i++)
-		spnotes_notes_sort_last_modified(spn_instance.categs + i);
+		if (to_sort_alphabet)
+			spnotes_notes_sort_alphabetically(spn_instance.categs +
+			                                 i);
+		else
+			spnotes_notes_sort_last_modified(spn_instance.categs +
+			                                 i);
 }
 
 static void
@@ -152,6 +164,8 @@ main(int argc, char **argv)
 	splf_toggle(&to_output_verbose, ' ', "verbose", "Verbose output");
 	splf_str(&notes_root_loc, 'p', "path", "Path to the notes");
 	splf_str(&delimiter, 'd', "delimiter", "Delimiter");
+	splf_toggle(&to_sort_alphabet, 'a', "alphabet",
+	            "Sort the category and notes in ascending alphabetical order (Default is to sort by last modified)");
 
 	f_info = splf_parse(argc, argv);
 
