@@ -107,7 +107,7 @@ fill_categs_notes(void)
 	for (size_t i = 0; i < spn_instance.categs_c; i++)
 		if (to_sort_alphabet)
 			spnotes_notes_sort_alphabetically(spn_instance.categs +
-			                                 i);
+			                                  i);
 		else
 			spnotes_notes_sort_last_modified(spn_instance.categs +
 			                                 i);
@@ -164,8 +164,9 @@ main(int argc, char **argv)
 	splf_toggle(&to_output_verbose, ' ', "verbose", "Verbose output");
 	splf_str(&notes_root_loc, 'p', "path", "Path to the notes");
 	splf_str(&delimiter, 'd', "delimiter", "Delimiter");
-	splf_toggle(&to_sort_alphabet, 'a', "alphabet",
-	            "Sort the category and notes in ascending alphabetical order (Default is to sort by last modified)");
+	splf_toggle(
+		&to_sort_alphabet, 'a', "alphabet",
+		"Sort the category and notes in ascending alphabetical order (Default is to sort by last modified)");
 
 	f_info = splf_parse(argc, argv);
 
@@ -284,7 +285,7 @@ main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		}
 
-		ERR_MORE_INFO("You can only add a category or note.");
+		ERR_MORE_INFO("You can add either a category or a note only.");
 	}
 
 	/* 'remove' */
@@ -361,7 +362,8 @@ main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		}
 
-		ERR_MORE_INFO("You can only delete a category or note.");
+		ERR_MORE_INFO(
+			"You can remove either a category or a note only.");
 	}
 
 	/* list */
@@ -395,7 +397,7 @@ main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		}
 
-		ERR_MORE_INFO("You can only delete a category or note.");
+		ERR_MORE_INFO("You can list either categories or notes only.");
 	}
 
 	/* path */
@@ -456,7 +458,8 @@ main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		}
 
-		ERR_MORE_INFO("You can get path of a category or note.");
+		ERR_MORE_INFO(
+			"You can get path of either a category or a note only.");
 	}
 
 	/* info */
@@ -528,7 +531,8 @@ main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		}
 
-		ERR_MORE_INFO("You can get path of a category or note.");
+		ERR_MORE_INFO(
+			"You can get info of either a category or a note only.");
 	}
 
 	ERR_MORE_INFO("Invalid option provided.");
